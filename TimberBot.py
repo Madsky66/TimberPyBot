@@ -64,24 +64,23 @@ def detect_zone(zone_params, target_colors):
 
 
 def check_game_state(left_zones, right_zones):
-    left_active = any(detect_zone(zone, COLOR_TO_DETECT) for zone in left_zones)
-    right_active = any(detect_zone(zone, COLOR_TO_DETECT) for zone in right_zones)
+    left_detected_colors = [zone for zone in left_zones if detect_zone(zone, COLOR_TO_DETECT)]
+    right_detected_colors = [zone for zone in right_zones if detect_zone(zone, COLOR_TO_DETECT)]
+    left_active = len(left_detected_colors) > 0
+    right_active = len(right_detected_colors) > 0
     if not left_active and not right_active:
         if all(detect_zone(zone, WHITE_COLOR) for zone in (left_zones + right_zones)):
-            logging.info("Flash détecté")
-            return "flash"
+            return "flash", None
         else:
-            logging.info("Jeu non détecté")
-            return "none"
+            return "none", None
     elif left_active and right_active:
-        logging.info("Les deux zones sont actives")
-        return "both"
+        left_color = left_detected_colors[0].color if left_detected_colors else None
+        right_color = right_detected_colors[0].color if right_detected_colors else None
+        return "both", (left_color, right_color)
     elif left_active:
-        logging.info("Branche détectée à gauche")
-        return "left"
+        return "left", left_detected_colors[0].color
     elif right_active:
-        logging.info("Branche détectée à droite")
-        return "right"
+        return "right", right_detected_colors[0].color
 
 
 class Bot:
@@ -99,18 +98,18 @@ class Bot:
     def visualize_zones(self):
         zones = self.left_zones + self.right_zones
         for zone in zones:
-            self.mouse.position = (zone.x, zone.y)
+            self.mouse.position = (zone.x / 1.25, zone.y / 1.25)
             time.sleep(0.5)
-            self.mouse.position = (zone.x + zone.width, zone.y + zone.height)
+            self.mouse.position = ((zone.x + zone.width) / 1.25, (zone.y + zone.height) / 1.25)
             time.sleep(1)
 
-    def handle_game_state(self, state):
+    def handle_game_state(self, state, color):
         beep_params = {
-            "left": (1000, 50, 1500, 100),
-            "right": (1000, 50, 500, 100),
-            "flash": (1500, 250, 1500, 250, 1500, 250),
+            "left": (1000, 500, 1500, 250),
+            "right": (1000, 500, 500, 250),
+            "flash": (1500, 500, 1500, 250),
             "none": (250, 500),
-            "both": (150, 350, 150, 350),
+            "both": (100, 500),
         }
 
         wait_times = {
@@ -127,7 +126,7 @@ class Bot:
 
         self.confirmations[state] += 1
         if self.confirmations[state] >= REQUIRED_CONFIRMATIONS:
-            logging.warning(f"{state.capitalize()} confirmé. Couleur : {Bot.hexcolor_output}")
+            logging.warning(f" - {state.capitalize()} - Couleur : {color}")
             for i in range(0, len(beep_params[state]), 2):
                 beep(beep_params[state][i], beep_params[state][i+1])
                 time.sleep(0.01)
@@ -140,8 +139,8 @@ class Bot:
     def start(self):
         while not self.stop_detection_flag:
             try:
-                game_state = check_game_state(self.left_zones, self.right_zones)
-                self.handle_game_state(game_state)
+                game_state, color = check_game_state(self.left_zones, self.right_zones)
+                self.handle_game_state(game_state, color)
             except Exception as e:
                 print(f"Une exception s'est produite : {e}")
 
@@ -164,15 +163,15 @@ class Bot:
 
 def main():
     left_zones = [
-        ZoneParams(int(753), int(460), int(10), int(1), COLOR_TO_DETECT, 0.1),
-        ZoneParams(int(758), int(480), int(1), int(20), COLOR_TO_DETECT, 0.75),
-        ZoneParams(int(753), int(515), int(10), int(1), COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(753 * 1.25), int(460 * 1.25), int(10), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(758 * 1.25), int(480 * 1.25), int(1), int(20), COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(753 * 1.25), int(515 * 1.25), int(10), int(1), COLOR_TO_DETECT, 0.1)
     ]
 
     right_zones = [
-        ZoneParams(int(837), int(460), int(10), int(1), COLOR_TO_DETECT, 0.1),
-        ZoneParams(int(842), int(480), int(1), int(20), COLOR_TO_DETECT, 0.75),
-        ZoneParams(int(837), int(515), int(10), int(1), COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(838 * 1.25), int(460 * 1.25), int(20), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(843 * 1.25), int(480 * 1.25), int(1), int(20), COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(838 * 1.25), int(515 * 1.25), int(20), int(1), COLOR_TO_DETECT, 0.1)
     ]
     bot = Bot(left_zones, right_zones)
     bot.run()
