@@ -1,6 +1,7 @@
 import logging
 import threading
 import webcolors
+import numpy as np
 
 from PIL import ImageGrab
 
@@ -12,8 +13,8 @@ import time
 
 logging.basicConfig(level=logging.INFO)
 
-COLOR_TO_DETECT = [(95, 41, 0)]
-WHITE_COLOR = [(255, 255, 255)]
+COLOR_TO_DETECT = np.array([95, 41, 0])
+WHITE_COLOR = np.array([255, 255, 255])
 REQUIRED_CONFIRMATIONS = 3
 BASE_WAIT_TIME = 0.1
 FLASH_WAIT_TIME = 0.1
@@ -39,37 +40,31 @@ class ZoneParams:
         self.confirmations = 0
 
 
-def is_color_match(color, target_colors, threshold=1):
-    return any(
-        abs(color[0] - target_color[0]) <= threshold and
-        abs(color[1] - target_color[1]) <= threshold and
-        abs(color[2] - target_color[2]) <= threshold
-        for target_color in target_colors
-    )
+def is_color_match(color, target_color, threshold=1):
+    return np.all(np.abs(color - target_color) <= threshold)
 
 
-def detect_zone(zone_params, target_colors):
-    zone = ImageGrab.grab(bbox=zone_params.rect)
+def detect_zone(zone_params, target_color, screenshot):
+    zone = screenshot.crop(zone_params.rect)
+    zone.save("zone.png")
+    zone_np = np.array(zone)
     total_pixels = zone.width * zone.height
-    matched_pixels = sum(
-        is_color_match(zone.getpixel((x, y)), target_colors)
-        for y in range(zone.height)
-        for x in range(zone.width)
-    )
+    matched_pixels = np.sum(is_color_match(zone_np, target_color))
     coverage = matched_pixels / total_pixels
     detected_color = zone.getpixel((0, 0))
     color_hex = webcolors.rgb_to_hex(detected_color)
     Bot.hexcolor_output = color_hex
+    zone.show()
     return coverage >= zone_params.coverage
 
 
-def check_game_state(left_zones, right_zones):
-    left_detected_colors = [zone for zone in left_zones if detect_zone(zone, COLOR_TO_DETECT)]
-    right_detected_colors = [zone for zone in right_zones if detect_zone(zone, COLOR_TO_DETECT)]
+def check_game_state(left_zones, right_zones, screenshot):
+    left_detected_colors = [zone for zone in left_zones if detect_zone(zone, COLOR_TO_DETECT, screenshot)]
+    right_detected_colors = [zone for zone in right_zones if detect_zone(zone, COLOR_TO_DETECT, screenshot)]
     left_active = len(left_detected_colors) > 0
     right_active = len(right_detected_colors) > 0
     if not left_active and not right_active:
-        if all(detect_zone(zone, WHITE_COLOR) for zone in (left_zones + right_zones)):
+        if all(detect_zone(zone, WHITE_COLOR, screenshot) for zone in (left_zones + right_zones)):
             return "flash", None
         else:
             return "none", None
@@ -139,7 +134,9 @@ class Bot:
     def start(self):
         while not self.stop_detection_flag:
             try:
-                game_state, color = check_game_state(self.left_zones, self.right_zones)
+                screenshot = ImageGrab.grab()
+                screenshot.save("screenshot.png")
+                game_state, color = check_game_state(self.left_zones, self.right_zones, screenshot)
                 self.handle_game_state(game_state, color)
             except Exception as e:
                 print(f"Une exception s'est produite : {e}")
@@ -163,15 +160,15 @@ class Bot:
 
 def main():
     left_zones = [
-        ZoneParams(int(753 * 1.25), int(460 * 1.25), int(10), int(1), COLOR_TO_DETECT, 0.1),
-        ZoneParams(int(758 * 1.25), int(480 * 1.25), int(1), int(20), COLOR_TO_DETECT, 0.75),
-        ZoneParams(int(753 * 1.25), int(515 * 1.25), int(10), int(1), COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(755 * 1.25), int(460 * 1.25), int(12), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(759 * 1.25), int(480 * 1.25), int(1), int(20), COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(755 * 1.25), int(515 * 1.25), int(12), int(1), COLOR_TO_DETECT, 0.1)
     ]
 
     right_zones = [
-        ZoneParams(int(838 * 1.25), int(460 * 1.25), int(20), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(839 * 1.25), int(460 * 1.25), int(12), int(1), COLOR_TO_DETECT, 0.1),
         ZoneParams(int(843 * 1.25), int(480 * 1.25), int(1), int(20), COLOR_TO_DETECT, 0.75),
-        ZoneParams(int(838 * 1.25), int(515 * 1.25), int(20), int(1), COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(839 * 1.25), int(515 * 1.25), int(12), int(1), COLOR_TO_DETECT, 0.1)
     ]
     bot = Bot(left_zones, right_zones)
     bot.run()
