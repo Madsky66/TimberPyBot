@@ -1,16 +1,30 @@
 import logging
 import threading
-import time
+import webcolors
+
 from PIL import ImageGrab
+
 from pynput.keyboard import Controller, Key
+from pynput.mouse import Controller as MouseController
+
+import winsound
+import time
 
 logging.basicConfig(level=logging.INFO)
 
 COLOR_TO_DETECT = [(95, 41, 0)]
 WHITE_COLOR = [(255, 255, 255)]
 REQUIRED_CONFIRMATIONS = 3
+BASE_WAIT_TIME = 0.1
 FLASH_WAIT_TIME = 0.1
 NONE_WAIT_TIME = 0.01
+BOTH_WAIT_TIME = 0.05
+
+global hexcolor_output
+
+
+def beep(frequency, duration):
+    winsound.Beep(frequency, duration)
 
 
 class ZoneParams:
@@ -43,6 +57,9 @@ def detect_zone(zone_params, target_colors):
         for x in range(zone.width)
     )
     coverage = matched_pixels / total_pixels
+    detected_color = zone.getpixel((0, 0))
+    color_hex = webcolors.rgb_to_hex(detected_color)
+    Bot.hexcolor_output = color_hex
     return coverage >= zone_params.coverage
 
 
@@ -51,54 +68,80 @@ def check_game_state(left_zones, right_zones):
     right_active = any(detect_zone(zone, COLOR_TO_DETECT) for zone in right_zones)
     if not left_active and not right_active:
         if all(detect_zone(zone, WHITE_COLOR) for zone in (left_zones + right_zones)):
+            logging.info("Flash détecté")
             return "flash"
         else:
+            logging.info("Jeu non détecté")
             return "none"
     elif left_active and right_active:
-        print("Problème de détection : Les deux zones sont actives")
-        return None
+        logging.info("Les deux zones sont actives")
+        return "both"
     elif left_active:
-        print("Branche détectée à gauche")
+        logging.info("Branche détectée à gauche")
         return "left"
     elif right_active:
-        print("Branche détectée à droite")
+        logging.info("Branche détectée à droite")
         return "right"
 
 
 class Bot:
+    hexcolor_output = None
+
     def __init__(self, left_zones, right_zones):
         self.keyboard = Controller()
         self.stop_detection_flag = False
         self.left_zones = left_zones
         self.right_zones = right_zones
         self.thread = threading.Thread(target=self.start)
+        self.confirmations = {"flash": 0, "none": 0, "both": 0, "left": 0, "right": 0}
+        self.mouse = MouseController()
+
+    def visualize_zones(self):
+        zones = self.left_zones + self.right_zones
+        for zone in zones:
+            self.mouse.position = (zone.x, zone.y)
+            time.sleep(0.5)
+            self.mouse.position = (zone.x + zone.width, zone.y + zone.height)
+            time.sleep(1)
+
+    def handle_game_state(self, state):
+        beep_params = {
+            "left": (1000, 50, 1500, 100),
+            "right": (1000, 50, 500, 100),
+            "flash": (1500, 250, 1500, 250, 1500, 250),
+            "none": (250, 500),
+            "both": (150, 350, 150, 350),
+        }
+
+        wait_times = {
+            "left": BASE_WAIT_TIME,
+            "right": BASE_WAIT_TIME,
+            "flash": FLASH_WAIT_TIME,
+            "none": NONE_WAIT_TIME,
+            "both": BOTH_WAIT_TIME,
+        }
+        keys_to_press = {
+            "left": Key.right,
+            "right": Key.left,
+        }
+
+        self.confirmations[state] += 1
+        if self.confirmations[state] >= REQUIRED_CONFIRMATIONS:
+            logging.warning(f"{state.capitalize()} confirmé. Couleur : {Bot.hexcolor_output}")
+            for i in range(0, len(beep_params[state]), 2):
+                beep(beep_params[state][i], beep_params[state][i+1])
+                time.sleep(0.01)
+            self.confirmations = {key: 0 for key in self.confirmations}
+            time.sleep(wait_times[state])
+
+        if state in keys_to_press and self.confirmations[state] >= REQUIRED_CONFIRMATIONS:
+            self.press_key(keys_to_press[state])
 
     def start(self):
-        none_confirmations = 0
-        flash_confirmations = 0
         while not self.stop_detection_flag:
             try:
                 game_state = check_game_state(self.left_zones, self.right_zones)
-                if game_state == "left":
-                    self.press_key(Key.right)
-                elif game_state == "right":
-                    self.press_key(Key.left)
-                elif game_state == "flash":
-                    flash_confirmations += 1
-                    if flash_confirmations >= REQUIRED_CONFIRMATIONS:
-                        print("Flash confirmé. Attente...")
-                        flash_confirmations = 0
-                        time.sleep(FLASH_WAIT_TIME)
-                elif game_state == "none":
-                    none_confirmations += 1
-                    if none_confirmations >= REQUIRED_CONFIRMATIONS:
-                        print("Jeu non détecté. Attente...")
-                        none_confirmations = 0
-                        time.sleep(NONE_WAIT_TIME)
-                else:
-                    flash_confirmations = 0
-                    none_confirmations = 0
-                time.sleep(1)
+                self.handle_game_state(game_state)
             except Exception as e:
                 print(f"Une exception s'est produite : {e}")
 
@@ -114,19 +157,26 @@ class Bot:
 
     def run(self):
         logging.info("Démarrage du script")
+        time.sleep(1)
+        self.visualize_zones()
         self.thread.start()
 
 
-if __name__ == "__main__":
+def main():
     left_zones = [
-        ZoneParams(1053, 575, 5, 1, COLOR_TO_DETECT, 0.1),
-        ZoneParams(843, 480, 1, 15, COLOR_TO_DETECT, 0.75),
-        ZoneParams(842, 515, 5, 1, COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(753), int(460), int(10), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(758), int(480), int(1), int(20), COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(753), int(515), int(10), int(1), COLOR_TO_DETECT, 0.1)
     ]
+
     right_zones = [
-        ZoneParams(1051, 575, 5, 1, COLOR_TO_DETECT, 0.1),
-        ZoneParams(843, 480, 1, 15, COLOR_TO_DETECT, 0.75),
-        ZoneParams(842, 515, 5, 1, COLOR_TO_DETECT, 0.1)
+        ZoneParams(int(837), int(460), int(10), int(1), COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(842), int(480), int(1), int(20), COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(837), int(515), int(10), int(1), COLOR_TO_DETECT, 0.1)
     ]
     bot = Bot(left_zones, right_zones)
     bot.run()
+
+
+if __name__ == "__main__":
+    main()
