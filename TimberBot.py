@@ -1,15 +1,13 @@
 import logging
 import threading
 import webcolors
+import winsound
+import time
 import numpy as np
 
 from PIL import ImageGrab
-
 from pynput.keyboard import Controller, Key
 from pynput.mouse import Controller as MouseController
-
-import winsound
-import time
 
 logging.basicConfig(level=logging.INFO)
 
@@ -26,6 +24,10 @@ global hexcolor_output
 
 def beep(frequency, duration):
     winsound.Beep(frequency, duration)
+
+
+class ColorDetectionError(Exception):
+    pass
 
 
 class ZoneParams:
@@ -86,7 +88,6 @@ class Bot:
         self.stop_detection_flag = False
         self.left_zones = left_zones
         self.right_zones = right_zones
-        self.thread = threading.Thread(target=self.start)
         self.confirmations = {"flash": 0, "aucun": 0, "double": 0, "gauche": 0, "droite": 0}
         self.mouse = MouseController()
 
@@ -138,7 +139,7 @@ class Bot:
                 game_state, color = check_game_state(self.left_zones, self.right_zones, screenshot)
                 self.handle_game_state(game_state, color)
             except Exception as e:
-                print(f"Une exception s'est produite : {e}")
+                raise ColorDetectionError("Une exception s'est produite lors de la détection de la couleur") from e
 
     def press_key(self, key):
         self.keyboard.press(key)
@@ -154,6 +155,7 @@ class Bot:
         logging.info("Démarrage du script")
         time.sleep(1)
         # self.visualize_zones()
+        self.thread = threading.Thread(target=self.start)
         self.thread.start()
 
 
