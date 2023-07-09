@@ -40,13 +40,13 @@ class ZoneParams:
         self.confirmations = 0
 
 
-def is_color_match(color, target_color, threshold=1):
-    return np.all(np.abs(color - target_color) <= threshold)
+def is_color_match(color, target_color):
+    return np.all(color == target_color, axis=-1)
 
 
 def detect_zone(zone_params, target_color, screenshot):
     zone = screenshot.crop(zone_params.rect)
-    zone.save("zone.png")
+    # zone.save("zone.png")
     zone_np = np.array(zone)
     total_pixels = zone.width * zone.height
     matched_pixels = np.sum(is_color_match(zone_np, target_color))
@@ -54,7 +54,7 @@ def detect_zone(zone_params, target_color, screenshot):
     detected_color = zone.getpixel((0, 0))
     color_hex = webcolors.rgb_to_hex(detected_color)
     Bot.hexcolor_output = color_hex
-    zone.show()
+    # zone.show()
     return coverage >= zone_params.coverage
 
 
@@ -67,15 +67,15 @@ def check_game_state(left_zones, right_zones, screenshot):
         if all(detect_zone(zone, WHITE_COLOR, screenshot) for zone in (left_zones + right_zones)):
             return "flash", None
         else:
-            return "none", None
+            return "aucun", "Jeu non actif"
     elif left_active and right_active:
         left_color = left_detected_colors[0].color if left_detected_colors else None
         right_color = right_detected_colors[0].color if right_detected_colors else None
-        return "both", (left_color, right_color)
+        return "double", (left_color, right_color)
     elif left_active:
-        return "left", left_detected_colors[0].color
+        return "gauche", left_detected_colors[0].color
     elif right_active:
-        return "right", right_detected_colors[0].color
+        return "droite", right_detected_colors[0].color
 
 
 class Bot:
@@ -87,36 +87,36 @@ class Bot:
         self.left_zones = left_zones
         self.right_zones = right_zones
         self.thread = threading.Thread(target=self.start)
-        self.confirmations = {"flash": 0, "none": 0, "both": 0, "left": 0, "right": 0}
+        self.confirmations = {"flash": 0, "aucun": 0, "double": 0, "gauche": 0, "droite": 0}
         self.mouse = MouseController()
 
-    def visualize_zones(self):
-        zones = self.left_zones + self.right_zones
-        for zone in zones:
-            self.mouse.position = (zone.x / 1.25, zone.y / 1.25)
-            time.sleep(0.5)
-            self.mouse.position = ((zone.x + zone.width) / 1.25, (zone.y + zone.height) / 1.25)
-            time.sleep(1)
+    # def visualize_zones(self):
+    #     zones = self.left_zones + self.right_zones
+    #     for zone in zones:
+    #         self.mouse.position = (zone.x / 1.25, zone.y / 1.25)
+    #         time.sleep(0.5)
+    #         self.mouse.position = ((zone.x + zone.width) / 1.25, (zone.y + zone.height) / 1.25)
+    #         time.sleep(1)
 
     def handle_game_state(self, state, color):
         beep_params = {
-            "left": (1000, 500, 1500, 250),
-            "right": (1000, 500, 500, 250),
+            "gauche": (1000, 500, 1500, 250),
+            "droite": (1000, 500, 500, 250),
             "flash": (1500, 500, 1500, 250),
-            "none": (250, 500),
-            "both": (100, 500),
+            "aucun": (250, 500),
+            "double": (100, 500),
         }
 
         wait_times = {
-            "left": BASE_WAIT_TIME,
-            "right": BASE_WAIT_TIME,
+            "gauche": BASE_WAIT_TIME,
+            "droite": BASE_WAIT_TIME,
             "flash": FLASH_WAIT_TIME,
-            "none": NONE_WAIT_TIME,
-            "both": BOTH_WAIT_TIME,
+            "aucun": NONE_WAIT_TIME,
+            "double": BOTH_WAIT_TIME,
         }
         keys_to_press = {
-            "left": Key.right,
-            "right": Key.left,
+            "gauche": Key.right,
+            "droite": Key.left,
         }
 
         self.confirmations[state] += 1
@@ -135,7 +135,6 @@ class Bot:
         while not self.stop_detection_flag:
             try:
                 screenshot = ImageGrab.grab()
-                screenshot.save("screenshot.png")
                 game_state, color = check_game_state(self.left_zones, self.right_zones, screenshot)
                 self.handle_game_state(game_state, color)
             except Exception as e:
@@ -154,7 +153,7 @@ class Bot:
     def run(self):
         logging.info("Démarrage du script")
         time.sleep(1)
-        self.visualize_zones()
+        # self.visualize_zones()
         self.thread.start()
 
 
