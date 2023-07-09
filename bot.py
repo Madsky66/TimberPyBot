@@ -11,23 +11,28 @@ from PIL import ImageGrab
 from pynput.keyboard import Controller, Key
 from pynput.mouse import Controller as MouseController
 
+LOGGER_FORMAT = "%(asctime)s %(levelname)s:%(message)s"
+LOGGER_FILE = "bot.log"
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
-console_format = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
+console_format = logging.Formatter(LOGGER_FORMAT)
 console_handler.setFormatter(console_format)
 logger.addHandler(console_handler)
 
-file_handler = logging.FileHandler('bot.log')
+file_handler = logging.FileHandler(LOGGER_FILE)
 file_handler.setLevel(logging.INFO)
-file_format = logging.Formatter('%(asctime)s %(levelname)s:%(message)s')
+file_format = logging.Formatter(LOGGER_FORMAT)
 file_handler.setFormatter(file_format)
 logger.addHandler(file_handler)
 
-logging.basicConfig(filename='bot.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+logging.basicConfig(filename=LOGGER_FILE, level=logging.INFO, format=LOGGER_FORMAT)
 
+H_COVERAGE = 0.1
+V_COVERAGE = 1
 
 BASE_WAIT_TIME = 0.1
 FLASH_WAIT_TIME = 0.1
@@ -44,16 +49,12 @@ class ColorDetectionError(Exception):
     pass
 
 
-def get_color_to_detect():
-    return COLOR_TO_DETECT
-
-
 def beep(frequency, duration):
     winsound.Beep(frequency, duration)
 
 
-def is_color_match(color, target_color):
-    return np.all(color == target_color, axis=-1)
+def is_color_match(color, target_color, tolerance=0):
+    return np.all(np.abs(color - target_color) <= tolerance, axis=-1)
 
 
 class Bot:
@@ -68,27 +69,28 @@ class Bot:
         self.confirmations = {"flash": 0, "aucun": 0, "double": 0, "gauche": 0, "droite": 0}
         self.mouse = MouseController()
 
-    # def visualize_zones(self):
-    #     zones = self.left_zones + self.right_zones
-    #     for zone in zones:
-    #         self.mouse.position = (zone.x / 1.25, zone.y / 1.25)
-    #         time.sleep(0.5)
-    #         self.mouse.position = ((zone.x + zone.width) / 1.25, (zone.y + zone.height) / 1.25)
-    #         time.sleep(1)
+    def visualize_zones(self):
+        zones = self.left_zones + self.right_zones
+        for zone in zones:
+            self.mouse.position = (zone.x, zone.y)
+            time.sleep(0.5)
+            self.mouse.position = ((zone.x + zone.width), (zone.y + zone.height))
+            time.sleep(1)
 
-    def detect_zone(self, zone_params, target_color, screenshot):
+    def detect_zone(self, zone_params, target_color, screenshot, tolerance=0):
         try:
             zone = screenshot.crop(zone_params.rect)
-            # zone.save("zone.png")
             zone_np = np.array(zone)
             total_pixels = zone.width * zone.height
-            matched_pixels = np.sum(is_color_match(zone_np, target_color))
-            coverage = matched_pixels / total_pixels
-            detected_color = zone.getpixel((0, 0))
-            color_hex = webcolors.rgb_to_hex(detected_color)
-            Bot.hexcolor_output = color_hex
-            # zone.show()
-            return coverage >= zone_params.coverage
+            matched_pixels = np.sum(is_color_match(zone_np, target_color, tolerance))
+            if np.array_equal(target_color, WHITE_COLOR):
+                return matched_pixels / total_pixels > 0.75
+            else:
+                coverage = matched_pixels / total_pixels
+                detected_color = zone.getpixel((0, 0))
+                color_hex = webcolors.rgb_to_hex(detected_color)
+                Bot.hexcolor_output = color_hex
+                return coverage >= zone_params.coverage
         except Exception as e:
             logging.error(f"Erreur lors de la détection de la zone : {str(e)}")
             logging.error(traceback.format_exc())
@@ -101,14 +103,12 @@ class Bot:
             left_active = len(left_detected_colors) > 0
             right_active = len(right_detected_colors) > 0
             if not left_active and not right_active:
-                if all(self.detect_zone(zone, WHITE_COLOR, screenshot) for zone in (left_zones + right_zones)):
+                if all(self.detect_zone(zone, WHITE_COLOR, screenshot, tolerance=128) for zone in (left_zones + right_zones)):
                     return "flash", None
                 else:
                     return "aucun", "Jeu non actif"
             elif left_active and right_active:
-                left_color = left_detected_colors[0].color if left_detected_colors else None
-                right_color = right_detected_colors[0].color if right_detected_colors else None
-                return "double", (left_color, right_color)
+                return "double", (left_detected_colors[0].color, right_detected_colors[0].color)
             elif left_active:
                 return "droite", left_detected_colors[0].color
             elif right_active:
@@ -153,7 +153,7 @@ class Bot:
             if self.confirmations[state] >= CONFIRMATIONS_REQUIRED[state]:
                 logging.warning(f" - {state.capitalize()} - Couleur : {color}")
                 for i in range(0, len(beep_params[state]), 2):
-                    beep(beep_params[state][i], beep_params[state][i+1])
+                    beep(beep_params[state][i], beep_params[state][i + 1])
                     time.sleep(0.01)
                 self.confirmations = {key: 0 for key in self.confirmations}
                 time.sleep(wait_times[state])
@@ -199,5 +199,5 @@ class Bot:
     def run(self):
         logging.info("Démarrage du script")
         time.sleep(1)
-        # self.visualize_zones()
+        self.visualize_zones()
         self.thread.start()

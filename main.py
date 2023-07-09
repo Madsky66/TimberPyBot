@@ -1,4 +1,4 @@
-from bot import Bot, get_color_to_detect
+from bot import Bot, COLOR_TO_DETECT, H_COVERAGE, V_COVERAGE
 
 
 class ZoneParams:
@@ -14,16 +14,15 @@ class ZoneParams:
 
 
 def main():
-    color_to_detect = get_color_to_detect()
     left_zones = [
-        ZoneParams(int(755 * 1.25), int(460 * 1.25), 12, 1, color_to_detect, 0.1),
-        ZoneParams(int(759 * 1.25), int(480 * 1.25), 1, 20, color_to_detect, 0.75),
-        ZoneParams(int(755 * 1.25), int(515 * 1.25), 12, 1, color_to_detect, 0.1)
+        ZoneParams(int(755 * 1.25), int(460 * 1.25), 12, 1, COLOR_TO_DETECT, H_COVERAGE),
+        ZoneParams(int(759 * 1.25), int(480 * 1.25), 1, 20, COLOR_TO_DETECT, V_COVERAGE),
+        ZoneParams(int(755 * 1.25), int(515 * 1.25), 12, 1, COLOR_TO_DETECT, H_COVERAGE)
     ]
     right_zones = [
-        ZoneParams(int(839 * 1.25), int(460 * 1.25), 12, 1, color_to_detect, 0.1),
-        ZoneParams(int(843 * 1.25), int(480 * 1.25), 1, 20, color_to_detect, 0.75),
-        ZoneParams(int(839 * 1.25), int(515 * 1.25), 12, 1, color_to_detect, 0.1)
+        ZoneParams(int(839 * 1.25), int(460 * 1.25), 12, 1, COLOR_TO_DETECT, 0.1),
+        ZoneParams(int(843 * 1.25), int(480 * 1.25), 1, 20, COLOR_TO_DETECT, 0.75),
+        ZoneParams(int(839 * 1.25), int(515 * 1.25), 12, 1, COLOR_TO_DETECT, 0.1)
     ]
     bot = Bot(left_zones, right_zones)
     bot.run()
