@@ -1,45 +1,14 @@
 import logging
+import sys
 import time
 import numpy as np
 import pyautogui
 import winsound
 
-from enum import Enum
 from PIL import ImageGrab
-from collections import defaultdict
-from pynput.keyboard import Controller
-from pynput.mouse import Controller as MouseController
+from case import Case
 
 from const import WHITE_COLOR, BROWN_COLOR, SUCCESS_CONFIRMATIONS, FAIL_CONFIRMATIONS, SUCCESS_WAIT, FLASH_WAIT, SHAKE_WAIT, FAIL_WAIT, MAIN_COVERAGE, SHAKE_COVERAGE
-
-
-class Case(Enum):
-    ERROR = "error"
-    LEFT = "left"
-    RIGHT = "right"
-    FLASH = "flash"
-    SHAKE = "shake"
-
-
-class Zone:
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.rect = (x, y, x + width, y + height)
-
-
-class Bot:
-    def __init__(self, zones, left_main_zone, right_main_zone, shake_zones):
-        self.stop_detection_flag = False
-        self.mouse = MouseController()
-        self.keyboard = Controller()
-        self.confirmations = defaultdict(int)
-        self.zones = zones
-        self.left_main_zone = left_main_zone
-        self.right_main_zone = right_main_zone
-        self.shake_zones = shake_zones
 
 
 def run(zones, left_main_zone, right_main_zone, shake_zones):
@@ -62,7 +31,7 @@ def run(zones, left_main_zone, right_main_zone, shake_zones):
 
 def check(case, color_to_check, zone_to_check, tolerance):
     try:
-        with ImageGrab.grab() as screenshot:  # Using 'with' for better resource management
+        with ImageGrab.grab() as screenshot:
             zone = screenshot.crop(zone_to_check)
             zone.show()
             zone.save("zone.png")
