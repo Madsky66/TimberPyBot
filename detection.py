@@ -13,7 +13,7 @@ from const import WHITE_COLOR, BROWN_COLOR, SUCCESS_CONFIRMATIONS, FAIL_CONFIRMA
 def run(zones, left_main_zone, right_main_zone):
     while True:
         main_zones, shake_zones = zones
-        if check("flash", WHITE_COLOR, main_zones, 32):
+        if check("flash", WHITE_COLOR, main_zones, 16):
             handle_action(Case.FLASH)
         else:
             if check("left", BROWN_COLOR, [left_main_zone], 0):
@@ -33,11 +33,11 @@ def check(case, color_to_check, zones_to_check, tolerance):
             zone.show()
             zone.save("zone.png")
             total_pixels = zone.width * zone.height
-            np_zone = np.array(zone)
-            if tolerance > 0:
-                matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
-            else:
-                matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
+            matched_pixels = sum(
+                is_color_match(zone.getpixel((x, y)), color_to_check, tolerance)
+                for y in range(zone.height)
+                for x in range(zone.width)
+            )
             if case == "shake":
                 if (matched_pixels / total_pixels) >= SHAKE_COVERAGE:
                     return True
@@ -45,6 +45,17 @@ def check(case, color_to_check, zones_to_check, tolerance):
                 if (matched_pixels / total_pixels) >= MAIN_COVERAGE:
                     return True
         return False
+
+
+def is_color_match(pixel_to_check, decomposed_colors, tolerance):
+    if len(pixel_to_check) != len(decomposed_colors):
+        return False
+
+    return all(
+        abs(pixel_to_check[i] - color[i]) <= tolerance
+        for i, color in enumerate(decomposed_colors)
+    )
+
 
 
 def handle_action(case):
@@ -79,5 +90,5 @@ def handle_action(case):
         confirmations_counter[_type] += 1
         for other_case in confirmations:
             if other_case != case:
-                confirmations[confirmations[other_case][0]] = 0
+                confirmations_counter[confirmations[other_case][0]] = 0
         logging.info(_incremented_message + str(confirmations[_type]))
