@@ -13,14 +13,15 @@ from const import WHITE_COLOR, BROWN_COLOR, SUCCESS_CONFIRMATIONS, FAIL_CONFIRMA
 
 def run(zones, left_main_zone, right_main_zone, shake_zones):
     try:
-        if check("flash", zones, WHITE_COLOR, 32):
+        main_zones, shake_zones = zones
+        if check("flash", WHITE_COLOR, main_zones, 32):
             handle_action(Case.FLASH)
         else:
-            if check("left", left_main_zone, BROWN_COLOR, 0):
+            if check("left", BROWN_COLOR, [left_main_zone], 0):
                 handle_action(Case.LEFT)
-            elif check("right", right_main_zone, BROWN_COLOR, 0):
+            elif check("right", BROWN_COLOR, [right_main_zone], 0):
                 handle_action(Case.RIGHT)
-            elif not check("shake", shake_zones, BROWN_COLOR, 0):
+            elif not check("shake", BROWN_COLOR, shake_zones, 0):
                 handle_action(Case.SHAKE)
             else:
                 handle_action(Case.ERROR)
@@ -29,22 +30,26 @@ def run(zones, left_main_zone, right_main_zone, shake_zones):
         sys.exit(1)
 
 
-def check(case, color_to_check, zone_to_check, tolerance):
+def check(case, color_to_check, zones_to_check, tolerance):
     try:
         with ImageGrab.grab() as screenshot:
-            zone = screenshot.crop(zone_to_check)
-            zone.show()
-            zone.save("zone.png")
-            total_pixels = zone.width * zone.height
-            np_zone = np.array(zone)
-            if tolerance > 0:
-                matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
-            else:
-                matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
-            if case == "shake":
-                return (matched_pixels / total_pixels) >= SHAKE_COVERAGE
-            else:
-                return (matched_pixels / total_pixels) >= MAIN_COVERAGE
+            for zone in zones_to_check:
+                zone = screenshot.crop(zone.rect)
+                zone.show()
+                zone.save("zone.png")
+                total_pixels = zone.width * zone.height
+                np_zone = np.array(zone)
+                if tolerance > 0:
+                    matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
+                else:
+                    matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
+                if case == "shake":
+                    if (matched_pixels / total_pixels) >= SHAKE_COVERAGE:
+                        return True
+                else:
+                    if (matched_pixels / total_pixels) >= MAIN_COVERAGE:
+                        return True
+            return False
     except Exception as e:
         logging.error(f"Une erreur est survenue : {e}")
         return False
