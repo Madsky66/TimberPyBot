@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 import numpy as np
 import pyautogui
@@ -11,8 +10,8 @@ from case import Case
 from const import WHITE_COLOR, BROWN_COLOR, SUCCESS_CONFIRMATIONS, FAIL_CONFIRMATIONS, SUCCESS_WAIT, FLASH_WAIT, SHAKE_WAIT, FAIL_WAIT, MAIN_COVERAGE, SHAKE_COVERAGE
 
 
-def run(zones, left_main_zone, right_main_zone, shake_zones):
-    try:
+def run(zones, left_main_zone, right_main_zone):
+    while True:
         main_zones, shake_zones = zones
         if check("flash", WHITE_COLOR, main_zones, 32):
             handle_action(Case.FLASH)
@@ -25,33 +24,26 @@ def run(zones, left_main_zone, right_main_zone, shake_zones):
                 handle_action(Case.SHAKE)
             else:
                 handle_action(Case.ERROR)
-    except Exception as e:
-        logging.error(f"Une erreur est survenue : {e}")
-        sys.exit(1)
 
 
 def check(case, color_to_check, zones_to_check, tolerance):
-    try:
-        with ImageGrab.grab() as screenshot:
-            for zone in zones_to_check:
-                zone = screenshot.crop(zone.rect)
-                zone.show()
-                zone.save("zone.png")
-                total_pixels = zone.width * zone.height
-                np_zone = np.array(zone)
-                if tolerance > 0:
-                    matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
-                else:
-                    matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
-                if case == "shake":
-                    if (matched_pixels / total_pixels) >= SHAKE_COVERAGE:
-                        return True
-                else:
-                    if (matched_pixels / total_pixels) >= MAIN_COVERAGE:
-                        return True
-            return False
-    except Exception as e:
-        logging.error(f"Une erreur est survenue : {e}")
+    with ImageGrab.grab() as screenshot:
+        for zone in zones_to_check:
+            zone = screenshot.crop(zone.rect)
+            zone.show()
+            zone.save("zone.png")
+            total_pixels = zone.width * zone.height
+            np_zone = np.array(zone)
+            if tolerance > 0:
+                matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
+            else:
+                matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
+            if case == "shake":
+                if (matched_pixels / total_pixels) >= SHAKE_COVERAGE:
+                    return True
+            else:
+                if (matched_pixels / total_pixels) >= MAIN_COVERAGE:
+                    return True
         return False
 
 
@@ -65,7 +57,7 @@ def handle_action(case):
         Case.ERROR: ("error", None, " - ERREUR -", " ERREUR -> "),
     }
     _type, _action, _confirmed_message, _incremented_message = confirmations[case]
-    if confirmations_counter[_type] == (SUCCESS_CONFIRMATIONS if case in [Case.LEFT, Case.RIGHT] else FAIL_CONFIRMATIONS):
+    if confirmations[_type] == (SUCCESS_CONFIRMATIONS if case in [Case.LEFT, Case.RIGHT] else FAIL_CONFIRMATIONS):
         logging.info(_confirmed_message)
         if case in [Case.LEFT, Case.RIGHT]:
             time.sleep(SUCCESS_WAIT)
