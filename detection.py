@@ -1,5 +1,4 @@
 import logging
-import sys
 import time
 import numpy as np
 import pyautogui
@@ -63,20 +62,20 @@ def run(zones, left_main_zone, right_main_zone, shake_zones):
 
 def check(case, color_to_check, zone_to_check, tolerance):
     try:
-        screenshot = ImageGrab.grab()
-        zone = screenshot.crop(zone_to_check)
-        zone.show()
-        zone.save("zone.png")
-        total_pixels = zone.width * zone.height
-        np_zone = np.array(zone)
-        if tolerance > 0:
-            matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
-        else:
-            matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
-        if case == "shake":
-            return (matched_pixels / total_pixels) >= SHAKE_COVERAGE
-        else:
-            return (matched_pixels / total_pixels) >= MAIN_COVERAGE
+        with ImageGrab.grab() as screenshot:  # Using 'with' for better resource management
+            zone = screenshot.crop(zone_to_check)
+            zone.show()
+            zone.save("zone.png")
+            total_pixels = zone.width * zone.height
+            np_zone = np.array(zone)
+            if tolerance > 0:
+                matched_pixels = np.sum(np.all((np_zone == color_to_check) <= tolerance, -1))
+            else:
+                matched_pixels = np.sum(np.all(np_zone == color_to_check, -1))
+            if case == "shake":
+                return (matched_pixels / total_pixels) >= SHAKE_COVERAGE
+            else:
+                return (matched_pixels / total_pixels) >= MAIN_COVERAGE
     except Exception as e:
         logging.error(f"Une erreur est survenue : {e}")
         return False

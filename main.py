@@ -1,5 +1,6 @@
 import logging
 import time
+import sys
 
 from pynput import mouse
 from detection import Zone, Bot, run
@@ -24,13 +25,17 @@ def main():
     logging.info(" Initialisation du bot dans 1 seconde...")
     time.sleep(1)
 
-    bot = Bot(zones, left_main_zone, right_main_zone, shake_zones)
+    Bot(zones, left_main_zone, right_main_zone, shake_zones)
 
     logging.info(" Bot initialisé")
     logging.info(" Lancement de la détection dans 1 seconde...")
     time.sleep(1)
 
-    run(zones, left_main_zone, right_main_zone, shake_zones)
+    try:
+        run(zones, left_main_zone, right_main_zone, shake_zones)
+    except Exception as e:
+        logging.error(f"Impossible de démarrer la détection : {e}")
+        sys.exit(1)
 
 
 def visualize_zones(zones):
@@ -38,7 +43,7 @@ def visualize_zones(zones):
     time.sleep(1)
     logging.info(" Début de la visualisation des zones dans 2 secondes...")
     time.sleep(1)
-    logging.info(" Début de la visualisation des zones dans 1 secondes...")
+    logging.info(" Début de la visualisation des zones dans 1 seconde...")
     time.sleep(1)
 
     for zone in zones:
