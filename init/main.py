@@ -4,7 +4,7 @@ from launcher import Launcher
 
 def main():
     launcher = Launcher()
-    run(launcher.zones, 1)
+    run(launcher.zones, 1, 1, 1, 1)
 
 
 if __name__ == "__main__":
