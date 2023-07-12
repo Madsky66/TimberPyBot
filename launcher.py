@@ -3,7 +3,6 @@ import time
 
 from pynput.keyboard import Controller
 from pynput.mouse import Controller as MouseController
-
 from init.bot import Bot
 from init.zone import Zone
 
@@ -13,7 +12,6 @@ class Launcher:
         logging.basicConfig(level=logging.INFO)
         self.mouse = MouseController()
         self.keyboard = Controller()
-
         logging.info(" Configuration des zones...")
         self.left_check_zone = Zone(int(759 * 1.25), int(480 * 1.25), 1, 20)
         self.right_check_zone = Zone(int(843 * 1.25), int(480 * 1.25), 1, 20)
@@ -24,26 +22,8 @@ class Launcher:
         self.right_verif_zone_b = Zone(int(839 * 1.25), int(515 * 1.25), 10, 1)
         self.verif_zones = self.left_verif_zone_a, self.left_verif_zone_b, self.right_verif_zone_a, self.right_verif_zone_b
         self.zones = self.check_zones, self.verif_zones
-        # self.visualize_zones(self.check_zones)
-
         logging.info(" Initialisation du bot...")
         time.sleep(0.5)
         self.bot = Bot(self.zones, self.left_check_zone, self.right_check_zone, self.verif_zones)
         logging.info(" Lancement de la détection...")
         time.sleep(0.5)
-
-    def visualize_zones(self, zones):
-        logging.info(" Début de la visualisation des zones dans 3 secondes...")
-        time.sleep(1)
-        logging.info(" Début de la visualisation des zones dans 2 secondes...")
-        time.sleep(1)
-        logging.info(" Début de la visualisation des zones dans 1 seconde...")
-        time.sleep(1)
-
-        for zone_list in zones:
-            for zone in zone_list:
-                x, y, width, height = zone.x, zone.y, zone.width, zone.height
-                self.mouse.position = x, y
-                time.sleep(1)
-                self.mouse.position = (x + width), (y + height)
-                time.sleep(2)

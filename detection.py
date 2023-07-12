@@ -18,6 +18,8 @@ def run(zones, count):
         l_verif_zone_b_img = ImageGrab.grab(l_verif_zone_b.rect)
         r_verif_zone_a_img = ImageGrab.grab(r_verif_zone_a.rect)
         r_verif_zone_b_img = ImageGrab.grab(r_verif_zone_b.rect)
+        l_check_zone_img.show()
+        r_check_zone_img.show()
         if check(BROWN, l_check_zone, 0, 1, l_check_zone_img) != 100 and check(BROWN, r_check_zone, 0, 1, r_check_zone_img) != 100:
             time.sleep(0.001)
             if check(WHITE, l_verif_zone_a, 16, 1, l_verif_zone_a_img) == 100 and check(WHITE, l_verif_zone_b, 16, 1, l_verif_zone_b_img) == 100 and check(WHITE, r_verif_zone_a, 16, 1, r_verif_zone_a_img) == 100 and check(WHITE, r_verif_zone_b, 16, 1, r_verif_zone_b_img) == 100:
@@ -61,7 +63,7 @@ def check(color_to_check, zone, tolerance, coverage, img):
     )
     result = ((matched_pixels / total_pixels) / coverage) * 100
     print(f" Zone vérifiée. Correspondance : {matched_pixels} = {result}%")
-    # zone_image.show()
+    # img.show()
     time.sleep(0.001)
     return result
 
