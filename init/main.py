@@ -1,10 +1,10 @@
-from detection import run
+from detection import dispatch
 from launcher import Launcher
 
 
 def main():
     launcher = Launcher()
-    run(launcher.zones, 1, 1, 1, 1)
+    dispatch(launcher.zones)
 
 
 if __name__ == "__main__":

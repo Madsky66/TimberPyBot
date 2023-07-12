@@ -14,23 +14,25 @@ class Launcher:
         self.keyboard = Controller()
         logging.info(" Configuration des zones...")
 
-        self.left_check_zone = Zone(int(759 * 1.25), int(480 * 1.25), 1, 20)
-        self.right_check_zone = Zone(int(843 * 1.25), int(480 * 1.25), 1, 20)
+        self.start_zone = Zone(int(950), int(820), 100, 30)
 
-        self.l_top_verif_zone = Zone(int(755 * 1.25), int(460 * 1.25), 10, 1)
-        self.l_bot_verif_zone = Zone(int(755 * 1.25), int(575 * 1.25), 10, 1)
+        self.l_top_zone = Zone(int(943), int(575), 10, 1)
+        self.r_top_zone = Zone(int(1048), int(575), 10, 1)
 
-        self.r_top_verif_zone = Zone(int(840 * 1.25), int(460 * 1.25), 10, 1)
-        self.r_bot_verif_zone = Zone(int(839 * 1.25), int(555 * 1.25), 10, 1)
+        self.l_mid_zone = Zone(int(948), int(600), 1, 20)
+        self.r_mid_zone = Zone(int(1053), int(600), 2, 20)
 
-        self.check_zones = self.left_check_zone, self.right_check_zone
-        self.top_zones = self.l_top_verif_zone, self.r_top_verif_zone
-        self.bot_zones = self.l_bot_verif_zone, self.r_bot_verif_zone
-        self.zones = self.check_zones, self.top_zones, self.bot_zones
+        self.l_bot_zone = Zone(int(943), int(660), 10, 1)
+        self.r_bot_zone = Zone(int(1048), int(660), 10, 1)
+
+        self.top_zones = self.l_top_zone, self.r_top_zone
+        self.mid_zones = self.l_mid_zone, self.r_mid_zone
+        self.bot_zones = self.l_bot_zone, self.r_bot_zone
+        self.zones = self.start_zone, self.top_zones, self.mid_zones, self.bot_zones
 
         logging.info(" Initialisation du bot...")
         time.sleep(0.5)
-        self.bot = Bot(self.zones, self.left_check_zone, self.right_check_zone, self.top_zones)
+        self.bot = Bot(self.zones)
 
         logging.info(" Lancement de la détection...")
         time.sleep(0.5)
