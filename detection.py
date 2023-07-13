@@ -53,10 +53,10 @@ def dispatch(zones):
 
         if check(BROWN, 0, 1, l_mid_img) != 100 and check(BROWN, 0, 1, r_mid_img) != 100:
             handle_non_brown_mid_zones(state, zones, l_mid_img, r_mid_img)
-        elif check(BROWN, 0, 1, l_mid_img) == 100:
+        elif check(BROWN, 0, 1, l_mid_img) < 100:
             handle_brown_zone("LEFT")
             state.reset_all()
-        elif check(BROWN, 0, 1, r_mid_img) == 100:
+        elif check(BROWN, 0, 1, r_mid_img) < 100:
             handle_brown_zone("RIGHT")
             state.reset_all()
         else:
@@ -64,7 +64,6 @@ def dispatch(zones):
 
 
 def handle_non_brown_mid_zones(state, zones, l_mid_img, r_mid_img):
-    time.sleep(0.01)
     zone_images = grab_images(zones)
     main_zones = ["l_top", "r_top", "l_mid", "r_mid", "l_bot", "r_bot"]
     for zone in main_zones:
@@ -84,55 +83,51 @@ def handle_non_brown_mid_zones(state, zones, l_mid_img, r_mid_img):
 def handle_flash(game_status):
     print(" Flash détecté")
     game_status.reset("flash")
-    time.sleep(0.01)
     if game_status.flash == 3:
         handle_action("FLASH")
         game_status.flash = 0
     else:
         game_status.flash += 1
         print(f" Flash = {game_status.flash}")
-        time.sleep(0.08)
+        time.sleep(0.05)
 
 
 def handle_shaking(game_status):
     print(" Tremblements détectés")
     game_status.reset("shaking")
     print(" Flash non détecté")
-    time.sleep(0.01)
     if game_status.shaking == 3:
         handle_action("SHAKING")
         game_status.shaking = 0
     else:
         game_status.shaking += 1
         print(f" Tremblements = {game_status.shaking}")
-        time.sleep(0.08)
+        time.sleep(0.05)
 
 
 def handle_inactive(game_status):
     print(" Jeu non détecté")
     game_status.reset("inactive")
     print(" Tremblements non détectés")
-    time.sleep(0.01)
     if game_status.inactive == 3:
         handle_action("INACTIVE")
         game_status.inactive = 0
     else:
         game_status.inactive += 1
         print(f" Inactif = {game_status.inactive}")
-        time.sleep(0.08)
+        time.sleep(0.05)
 
 
 def handle_unknown_status(game_status):
     game_status.reset_all()
     print(" Impossible de déterminer l'état du jeu...")
-    time.sleep(0.01)
     if game_status.error == 3:
         handle_action("ERROR")
         game_status.error = 0
     else:
         game_status.error += 1
         print(f" Erreur = {game_status.error}")
-        time.sleep(0.08)
+        time.sleep(0.05)
 
 
 def handle_brown_zone(direction):
@@ -165,11 +160,11 @@ def is_color_match(pixel_to_check, decomposed_colors, tolerance):
 
 def handle_action(_case):
     if _case in ["LEFT", "RIGHT"]:
-        time.sleep(0.25)
-        pyautogui.press("left" if _case == "LEFT" else "right")
-        logging.info(" Branche détectée à droite" if _case == "LEFT" else " Branche détectée à gauche")
+        time.sleep(0.1)
+        pyautogui.press("right" if _case == "LEFT" else "left")
+        logging.info(" Branche détectée à gauche" if _case == "LEFT" else " Branche détectée à droite")
     elif _case in ["FLASH", "SHAKING"]:
-        time.sleep(1 if _case == "FLASH" else 0.25)
+        time.sleep(0.5 if _case == "FLASH" else 0.25)
         # winsound.Beep(1500 if _case == "FLASH" else 500, 250)
         logging.info(" Flash en cours..." if _case == "FLASH" else " Tremblement en cours...")
     else:

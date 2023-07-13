@@ -16,13 +16,13 @@ class Launcher:
 
         self.start_zone = Zone(int(950), int(820), 100, 30)
 
-        self.l_top_zone = Zone(int(943), int(575), 10, 1)
+        self.l_top_zone = Zone(int(944), int(575), 10, 1)
         self.r_top_zone = Zone(int(1048), int(575), 10, 1)
 
-        self.l_mid_zone = Zone(int(948), int(600), 1, 20)
-        self.r_mid_zone = Zone(int(1053), int(600), 2, 20)
+        self.l_mid_zone = Zone(int(949), int(600), 1, 20)
+        self.r_mid_zone = Zone(int(1053), int(600), 1, 20)
 
-        self.l_bot_zone = Zone(int(943), int(660), 10, 1)
+        self.l_bot_zone = Zone(int(944), int(660), 10, 1)
         self.r_bot_zone = Zone(int(1048), int(660), 10, 1)
 
         self.top_zones = self.l_top_zone, self.r_top_zone
