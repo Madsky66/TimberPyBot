@@ -37,19 +37,8 @@ def dispatch(zones):
     state = State()
     while True:
         check_start(zones)
-        l_top_img = grab_images(zones)["l_top"]
-        r_top_img = grab_images(zones)["r_top"]
         l_mid_img = grab_images(zones)["l_mid"]
         r_mid_img = grab_images(zones)["r_mid"]
-        l_bot_img = grab_images(zones)["l_bot"]
-        r_bot_img = grab_images(zones)["r_bot"]
-
-        l_top_img.save("../res/img/zones/top/left.png")
-        r_top_img.save("../res/img/zones/top/right.png")
-        l_mid_img.save("../res/img/zones/mid/left.png")
-        r_mid_img.save("../res/img/zones/mid/right.png")
-        l_bot_img.save("../res/img/zones/bot/left.png")
-        r_bot_img.save("../res/img/zones/bot/right.png")
 
         if check(BROWN, 0, 1, l_mid_img) != 100 and check(BROWN, 0, 1, r_mid_img) != 100:
             handle_non_brown_mid_zones(state, zones, l_mid_img, r_mid_img)
@@ -102,7 +91,7 @@ def handle_shaking(game_status):
     else:
         game_status.shaking += 1
         print(f" Tremblements = {game_status.shaking}")
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 
 def handle_inactive(game_status):
@@ -115,7 +104,7 @@ def handle_inactive(game_status):
     else:
         game_status.inactive += 1
         print(f" Inactif = {game_status.inactive}")
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 
 def handle_unknown_status(game_status):
@@ -127,7 +116,7 @@ def handle_unknown_status(game_status):
     else:
         game_status.error += 1
         print(f" Erreur = {game_status.error}")
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 
 def handle_brown_zone(direction):
@@ -160,11 +149,11 @@ def is_color_match(pixel_to_check, decomposed_colors, tolerance):
 
 def handle_action(_case):
     if _case in ["LEFT", "RIGHT"]:
-        time.sleep(0.1)
+        time.sleep(0.01)
         pyautogui.press("right" if _case == "LEFT" else "left")
         logging.info(" Branche détectée à gauche" if _case == "LEFT" else " Branche détectée à droite")
     elif _case in ["FLASH", "SHAKING"]:
-        time.sleep(0.5 if _case == "FLASH" else 0.25)
+        time.sleep(0.5 if _case == "FLASH" else 0.1)
         # winsound.Beep(1500 if _case == "FLASH" else 500, 250)
         logging.info(" Flash en cours..." if _case == "FLASH" else " Tremblement en cours...")
     else:
