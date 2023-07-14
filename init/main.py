@@ -1,8 +1,11 @@
-from detection import dispatch, ZONES
+import logging
+
+from detection import dispatch
 
 
 def main():
-    dispatch(ZONES)
+    logging.basicConfig(level=logging.INFO)
+    dispatch()
 
 
 if __name__ == "__main__":

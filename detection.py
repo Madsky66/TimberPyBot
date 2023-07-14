@@ -18,21 +18,19 @@ class Zone:
 
 BROWN = np.array([95, 41, 0])
 
-L_TOP = Zone(int(944), int(575), 10, 1).rect
-R_TOP = Zone(int(1048), int(575), 10, 1).rect
-L_MID = Zone(int(949), int(600), 1, 20).rect
-R_MID = Zone(int(1053), int(600), 1, 20).rect
+L_TOP = Zone(int(944), int(575), 10, 1)
+R_TOP = Zone(int(1048), int(575), 10, 1)
+L_MID = Zone(int(949), int(600), 1, 20)
+R_MID = Zone(int(1053), int(600), 1, 20)
 
 
 def grab_images(zone):
     with mss() as sct:
-        return Image.frombytes("RGB", sct.grab(zone.rect).size, sct.grab(zone.rect).bgra, "raw", "BGRX")
+        sct_grab = sct.grab(zone.rect)
+        return Image.frombytes("RGB", sct_grab.size, sct_grab.bgra, "raw", "BGRX")
 
 
 def dispatch():
-    logging.info(" Initialisation du bot...")
-    time.sleep(0.5)
-
     logging.info(" Lancement de la détection...")
     time.sleep(0.5)
 
