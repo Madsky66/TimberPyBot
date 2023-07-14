@@ -7,8 +7,6 @@ from launcher import Launcher
 
 def get_mous_pos(zones):
     # time.sleep(3)
-    # start_verif = grab_images(zones)["start_zone"]
-    # start_verif.save("../res/img/zones/start/start_img.png")
     while True:
         x, y = pyautogui.position()
         bbox = (x, y, x + 1, y + 1)

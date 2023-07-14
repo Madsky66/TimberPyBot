@@ -14,21 +14,15 @@ class Launcher:
         self.keyboard = Controller()
         logging.info(" Configuration des zones...")
 
-        self.start_zone = Zone(int(950), int(820), 100, 30)
-
         self.l_top_zone = Zone(int(944), int(575), 10, 1)
         self.r_top_zone = Zone(int(1048), int(575), 10, 1)
 
         self.l_mid_zone = Zone(int(949), int(600), 1, 20)
         self.r_mid_zone = Zone(int(1053), int(600), 1, 20)
 
-        self.l_bot_zone = Zone(int(944), int(660), 10, 1)
-        self.r_bot_zone = Zone(int(1048), int(660), 10, 1)
-
         self.top_zones = self.l_top_zone, self.r_top_zone
         self.mid_zones = self.l_mid_zone, self.r_mid_zone
-        self.bot_zones = self.l_bot_zone, self.r_bot_zone
-        self.zones = self.start_zone, self.top_zones, self.mid_zones, self.bot_zones
+        self.zones = self.top_zones, self.mid_zones
 
         logging.info(" Initialisation du bot...")
         time.sleep(0.5)
