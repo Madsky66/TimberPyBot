@@ -2,7 +2,8 @@ import pyautogui
 import time
 
 from PIL import ImageGrab
-from launcher import Launcher
+
+from detection import Launcher
 
 
 def get_mous_pos(zones):

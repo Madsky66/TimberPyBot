@@ -1,10 +1,8 @@
-from detection import dispatch
-from launcher import Launcher
+from detection import dispatch, ZONES
 
 
 def main():
-    launcher = Launcher()
-    dispatch(launcher.zones)
+    dispatch(ZONES)
 
 
 if __name__ == "__main__":

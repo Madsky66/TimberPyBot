@@ -1,8 +1,7 @@
 import time
 import winsound
 
-from detection import grab_images
-from launcher import Launcher
+from detection import grab_images, Launcher
 
 
 def verif(zones):

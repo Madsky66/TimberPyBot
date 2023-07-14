@@ -1,41 +1,52 @@
-import pyautogui
+import logging
+import time
 
+import pyautogui
+import numpy as np
 from PIL import Image
 from mss import mss
 
-BROWN = (95, 41, 0)
+
+class Zone:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.rect = (x, y, x + width, y + height)
 
 
-def grab_images(zones):
-    top_zones, mid_zones = zones
-    l_top_zone, r_top_zone = top_zones
-    l_mid_zone, r_mid_zone = mid_zones
+BROWN = np.array([95, 41, 0])
+
+L_TOP = Zone(int(944), int(575), 10, 1).rect
+R_TOP = Zone(int(1048), int(575), 10, 1).rect
+L_MID = Zone(int(949), int(600), 1, 20).rect
+R_MID = Zone(int(1053), int(600), 1, 20).rect
+
+
+def grab_images(zone):
     with mss() as sct:
-        return {
-            "l_top": Image.frombytes("RGB", sct.grab(l_top_zone.rect).size, sct.grab(l_top_zone.rect).bgra, "raw", "BGRX"),
-            "r_top": Image.frombytes("RGB", sct.grab(r_top_zone.rect).size, sct.grab(r_top_zone.rect).bgra, "raw", "BGRX"),
-            "l_mid": Image.frombytes("RGB", sct.grab(l_mid_zone.rect).size, sct.grab(l_mid_zone.rect).bgra, "raw", "BGRX"),
-            "r_mid": Image.frombytes("RGB", sct.grab(r_mid_zone.rect).size, sct.grab(r_mid_zone.rect).bgra, "raw", "BGRX"),
-        }
+        return Image.frombytes("RGB", sct.grab(zone.rect).size, sct.grab(zone.rect).bgra, "raw", "BGRX")
 
 
-def dispatch(zones):
+def dispatch():
+    logging.info(" Initialisation du bot...")
+    time.sleep(0.5)
+
+    logging.info(" Lancement de la détection...")
+    time.sleep(0.5)
+
     while True:
-        l_mid_img = grab_images(zones)["l_mid"]
-        r_mid_img = grab_images(zones)["r_mid"]
-        if check(BROWN, 0, 1, l_mid_img) == 100:
+        if check(BROWN, 0, 1, grab_images(L_MID)) == 100:
             pyautogui.press("left")
-        elif check(BROWN, 0, 1, r_mid_img) == 100:
+        elif check(BROWN, 0, 1, grab_images(R_MID)) == 100:
             pyautogui.press("right")
 
 
 def check(color_to_check, tolerance, coverage, img):
-    total_pixels = img.width * img.height
-    matched_pixels = sum(
-        is_color_match(img.getpixel((x, y)), color_to_check, tolerance)
-        for y in range(img.height)
-        for x in range(img.width)
-    )
+    img_np = np.array(img)
+    total_pixels = img_np.shape[0] * img_np.shape[1]
+    matched_pixels = np.sum(np.all(np.abs(img_np - color_to_check) <= tolerance, axis=2))
     result = ((matched_pixels / total_pixels) / coverage) * 100
     return result
 
